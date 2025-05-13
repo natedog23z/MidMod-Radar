@@ -5,12 +5,14 @@ import { HouseProvider } from './context/HouseContext';
 import { PropertyDetailPage } from './pages/PropertyDetailPage';
 import { BrowsePage } from './pages/BrowsePage';
 import { FilterProvider } from './context/FilterContext';
+import { LandingPage } from './pages/LandingPage';
 
 export function App() {
   return (
     <HouseProvider>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/home" element={<Home />} />
         <Route 
           path="/browse" 
           element={
