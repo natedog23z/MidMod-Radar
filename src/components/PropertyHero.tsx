@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Image, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Image, X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { useHouse } from '../context/HouseContext';
+import { Link } from 'react-router-dom';
 
 export const PropertyHero = () => {
   const { house, loading, error } = useHouse();
@@ -133,7 +134,17 @@ export const PropertyHero = () => {
     );
   }
 
-  return <div className="relative h-[100vh] w-full">
+  return (
+    <div className="relative h-[100vh] w-full">
+      {/* Back button */}
+      <Link 
+        to="/browse" 
+        className="absolute top-6 left-6 z-10 flex items-center gap-2 bg-white/90 backdrop-blur-sm hover:bg-white/100 transition-colors text-black px-4 py-2.5 rounded-full shadow-sm"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="font-medium">Back to Browse</span>
+      </Link>
+      
       {/* See all photos button - only show if there are more than 3 photos */}
       {hasMorePhotos && (
         <button 
@@ -198,5 +209,6 @@ export const PropertyHero = () => {
           <p className="text-white/90">{locationText}</p>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
