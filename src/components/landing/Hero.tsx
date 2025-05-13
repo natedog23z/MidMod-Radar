@@ -35,10 +35,10 @@ export const Hero = () => {
       <div className="relative h-full flex items-center">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl space-y-6">
-            <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
+            <h1 className="text-5xl md:text-6xl font-reckless text-white leading-tight">
               Real-time radar
               <br />
-              for mid-century homes
+              for mid century homes
             </h1>
             {/* Trust indicators */}
             <div className="flex items-center gap-6 border-l-4 border-[#D5B887] pl-4">

@@ -1,3 +1,12 @@
+/* Import custom fonts */
+@font-face {
+  font-family: 'Reckless Neue';
+  src: url('./assets/fonts/reckless-neue-bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

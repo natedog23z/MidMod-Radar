@@ -76,7 +76,7 @@ export const PropertyHero = () => {
         {/* Gallery header */}
         <div className="flex justify-between items-center p-4 bg-black text-white">
           <div>
-            <h2 className="text-xl font-bold">{house.street}</h2>
+            <h2 className="text-xl font-reckless">{house.street}</h2>
             <p className="text-sm text-gray-300">{photos.length} photos</p>
           </div>
           <button onClick={handleCloseGallery} className="p-2 hover:bg-gray-800 rounded-full">
@@ -203,7 +203,7 @@ export const PropertyHero = () => {
       {/* Title overlay at bottom */}
       <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/50 to-transparent p-8">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2">
+          <h1 className="text-4xl font-reckless text-white mb-2">
             {house.street}
           </h1>
           <p className="text-white/90">{locationText}</p>
