@@ -1,14 +1,35 @@
 import React, { useState } from 'react';
 import { Heart, Lock, Bell, Share2 } from 'lucide-react';
+import { useHouse } from '../context/HouseContext';
+
 export const RightPanel = () => {
   const [isFavorited, setIsFavorited] = useState(false);
+  const { house, loading, error } = useHouse();
+  
+  if (loading) {
+    return <div className="p-6 space-y-8">
+      <p>Loading property data...</p>
+    </div>;
+  }
+  
+  if (error || !house) {
+    return <div className="p-6 space-y-8">
+      <p>Error loading property data. Please try again later.</p>
+    </div>;
+  }
+  
+  // Format the currency
+  const formattedValue = house.estimated_value 
+    ? `$${house.estimated_value.toLocaleString()}` 
+    : 'Not available';
+  
   return <div className="p-6 space-y-8">
       <div className="flex flex-col gap-6">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm text-gray-600 mb-1">Estimated value</p>
             <div className="bg-white/80 backdrop-blur px-4 py-2 rounded-full inline-flex items-center mb-2">
-              <p className="text-3xl font-bold">$7,711,490</p>
+              <p className="text-3xl font-bold">{formattedValue}</p>
             </div>
             <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#E9E8E3] text-gray-800">
               Off-market
@@ -80,7 +101,9 @@ export const RightPanel = () => {
           </div>
           <div>
             <p className="text-sm text-gray-600">Last sold</p>
-            <p className="font-bold">2015 ($13.2M)</p>
+            <p className="font-bold">
+              {house.year_built ? `${house.year_built} (${formattedValue})` : 'Not available'}
+            </p>
           </div>
         </div>
       </div>
