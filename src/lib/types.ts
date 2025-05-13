@@ -35,6 +35,7 @@ export interface Architect {
   death_year: number | null;
   bio: string | null;
   wikipedia_url: string | null;
+  count?: number; // Count of houses for this architect
 }
 
 export interface Style {
@@ -43,6 +44,7 @@ export interface Style {
   description: string | null;
   years_active: string | null;
   region: string | null;
+  count?: number; // Count of houses with this style
 }
 
 export interface Feature {

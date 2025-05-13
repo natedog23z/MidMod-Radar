@@ -60,14 +60,16 @@ export const FilterSidebar: React.FC = () => {
         const styles = await getAllStyles();
         updateFilterSection('Style', styles.map(style => ({ 
           id: style.id, 
-          name: style.name 
+          name: style.name,
+          count: style.count
         })));
         
         // Load architects
         const architects = await getAllArchitects();
         updateFilterSection('Architect', architects.map(architect => ({ 
           id: architect.id, 
-          name: architect.name 
+          name: architect.name,
+          count: architect.count
         })));
         
         // Load states

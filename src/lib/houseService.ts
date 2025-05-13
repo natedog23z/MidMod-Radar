@@ -122,34 +122,82 @@ export async function getFilteredHouses(filters?: HouseFilters) {
  * Fetches all architects for filter options
  */
 export async function getAllArchitects() {
-  const { data, error } = await supabase
+  // First get all houses with their architect IDs
+  const { data: houses, error: housesError } = await supabase
+    .from('houses')
+    .select('architect_id')
+    .eq('is_valid', true)
+    .not('architect_id', 'is', null);
+  
+  if (housesError) {
+    console.error('Error fetching houses for architect counts:', housesError);
+    throw housesError;
+  }
+  
+  // Count occurrences of each architect
+  const architectCounts: Record<string, number> = {};
+  houses.forEach((house) => {
+    const architectId = house.architect_id;
+    if (architectId) {
+      architectCounts[architectId] = (architectCounts[architectId] || 0) + 1;
+    }
+  });
+  
+  // Get architect details
+  const { data: architects, error: architectsError } = await supabase
     .from('architects')
     .select('*')
     .order('name', { ascending: true });
   
-  if (error) {
-    console.error('Error fetching architects:', error);
-    throw error;
+  if (architectsError) {
+    console.error('Error fetching architects:', architectsError);
+    throw architectsError;
   }
   
-  return data as Architect[];
+  // Add counts to architect data
+  return architects.map((architect) => ({
+    ...architect,
+    count: architectCounts[architect.id] || 0
+  }));
 }
 
 /**
  * Fetches all styles for filter options
  */
 export async function getAllStyles() {
-  const { data, error } = await supabase
+  // First we need to get all house_styles relations to count occurrences
+  const { data: houseStyles, error: houseStylesError } = await supabase
+    .from('house_styles')
+    .select('style_id, house_id');
+  
+  if (houseStylesError) {
+    console.error('Error fetching house_styles for style counts:', houseStylesError);
+    throw houseStylesError;
+  }
+  
+  // Count occurrences of each style
+  const styleCounts: Record<string, number> = {};
+  houseStyles.forEach((relation) => {
+    const styleId = relation.style_id;
+    styleCounts[styleId] = (styleCounts[styleId] || 0) + 1;
+  });
+  
+  // Get style details
+  const { data: styles, error: stylesError } = await supabase
     .from('styles')
     .select('*')
     .order('name', { ascending: true });
   
-  if (error) {
-    console.error('Error fetching styles:', error);
-    throw error;
+  if (stylesError) {
+    console.error('Error fetching styles:', stylesError);
+    throw stylesError;
   }
   
-  return data as Style[];
+  // Add counts to style data
+  return styles.map((style) => ({
+    ...style,
+    count: styleCounts[style.id] || 0
+  }));
 }
 
 /**
