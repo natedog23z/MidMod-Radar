@@ -15,6 +15,7 @@ type House = {
   estimated_value: number | null;
   description_text: string | null;
   featured_photo_url: string | null;
+  architect_id: string | null;
 };
 
 type Photo = {
@@ -22,6 +23,16 @@ type Photo = {
   house_id: string;
   photo_url: string;
   is_featured: boolean;
+};
+
+type Architect = {
+  id: string;
+  name: string;
+};
+
+type Style = {
+  id: string;
+  name: string;
 };
 
 type HouseEditorProps = {
@@ -32,6 +43,9 @@ export function HouseEditor({ houseId }: HouseEditorProps) {
   // State for house data
   const [house, setHouse] = useState<House | null>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [architects, setArchitects] = useState<Architect[]>([]);
+  const [styles, setStyles] = useState<Style[]>([]);
+  const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +55,7 @@ export function HouseEditor({ houseId }: HouseEditorProps) {
   const [fileUpload, setFileUpload] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch house data and photos
+  // Fetch house data, photos, architects, and styles
   useEffect(() => {
     async function fetchHouseData() {
       setLoading(true);
@@ -66,6 +80,33 @@ export function HouseEditor({ houseId }: HouseEditorProps) {
         
         if (photoError) throw photoError;
         setPhotos(photoData || []);
+
+        // Fetch architects
+        const { data: architectData, error: architectError } = await supabase
+          .from('architects')
+          .select('id, name')
+          .order('name');
+        
+        if (architectError) throw architectError;
+        setArchitects(architectData || []);
+
+        // Fetch styles
+        const { data: styleData, error: styleError } = await supabase
+          .from('styles')
+          .select('id, name')
+          .order('name');
+        
+        if (styleError) throw styleError;
+        setStyles(styleData || []);
+
+        // Fetch selected styles for this house
+        const { data: houseStyleData, error: houseStyleError } = await supabase
+          .from('house_styles')
+          .select('style_id')
+          .eq('house_id', houseId);
+        
+        if (houseStyleError) throw houseStyleError;
+        setSelectedStyles((houseStyleData || []).map(item => item.style_id));
       } catch (err) {
         console.error('Error fetching house data:', err);
         setError('Failed to load house data. Please try again.');
@@ -80,15 +121,44 @@ export function HouseEditor({ houseId }: HouseEditorProps) {
   }, [houseId]);
   
   // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
     if (house) {
-      setHouse({
-        ...house,
-        [name]: value === '' ? null : value,
-      });
+      // Handle different field types appropriately
+      if (name === 'year_built' || name === 'beds' || name === 'sqft') {
+        // Convert these fields to integers
+        const numValue = value === '' ? null : parseInt(value, 10);
+        setHouse({
+          ...house,
+          [name]: numValue
+        });
+      } else if (name === 'baths' || name === 'lot_acres' || name === 'estimated_value') {
+        // Convert these fields to floating point numbers
+        const numValue = value === '' ? null : parseFloat(value);
+        setHouse({
+          ...house,
+          [name]: numValue
+        });
+      } else {
+        // Handle string fields normally
+        setHouse({
+          ...house,
+          [name]: value === '' ? null : value,
+        });
+      }
     }
+  };
+  
+  // Handle style checkbox changes
+  const handleStyleChange = (styleId: string) => {
+    setSelectedStyles(prev => {
+      if (prev.includes(styleId)) {
+        return prev.filter(id => id !== styleId);
+      } else {
+        return [...prev, styleId];
+      }
+    });
   };
   
   // Handle form submission
@@ -101,20 +171,73 @@ export function HouseEditor({ houseId }: HouseEditorProps) {
     setSuccessMessage(null);
     
     try {
-      const { error } = await supabase
+      // Log the data being sent
+      console.log('Updating house with data:', {
+        street: house.street,
+        description_text: house.description_text,
+        estimated_value: house.estimated_value,
+        beds: house.beds,
+        baths: house.baths,
+        sqft: house.sqft,
+        lot_acres: house.lot_acres,
+        year_built: house.year_built,
+        architect_id: house.architect_id,
+      });
+      
+      // Update house details
+      const { error: houseError } = await supabase
         .from('houses')
         .update({
+          street: house.street,
           description_text: house.description_text,
           estimated_value: house.estimated_value,
           beds: house.beds,
           baths: house.baths,
           sqft: house.sqft,
           lot_acres: house.lot_acres,
+          year_built: house.year_built,
+          architect_id: house.architect_id,
           updated_at: new Date(),
         })
         .eq('id', house.id);
       
-      if (error) throw error;
+      if (houseError) throw houseError;
+      
+      // Update house styles - first remove existing styles
+      const { error: deleteStylesError } = await supabase
+        .from('house_styles')
+        .delete()
+        .eq('house_id', house.id);
+      
+      if (deleteStylesError) throw deleteStylesError;
+      
+      // Then add selected styles
+      if (selectedStyles.length > 0) {
+        const stylesToInsert = selectedStyles.map(styleId => ({
+          house_id: house.id,
+          style_id: styleId,
+        }));
+        
+        const { error: insertStylesError } = await supabase
+          .from('house_styles')
+          .insert(stylesToInsert);
+        
+        if (insertStylesError) throw insertStylesError;
+      }
+
+      // Refresh house data to ensure it's up-to-date
+      const { data: refreshedHouse, error: refreshError } = await supabase
+        .from('houses')
+        .select('*')
+        .eq('id', house.id)
+        .single();
+      
+      if (refreshError) {
+        console.error('Error refreshing house data:', refreshError);
+      } else {
+        setHouse(refreshedHouse);
+      }
+      
       setSuccessMessage('House details updated successfully.');
     } catch (err) {
       console.error('Error updating house:', err);
@@ -330,14 +453,13 @@ export function HouseEditor({ houseId }: HouseEditorProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-group">
-              <label className="block text-gray-700 mb-1">Street</label>
+              <label className="block text-gray-700 mb-1">House Name</label>
               <input
                 type="text"
                 name="street"
                 value={house.street || ''}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border rounded-md bg-gray-50"
-                disabled
+                className="w-full px-3 py-2 border rounded-md"
               />
             </div>
             
@@ -348,6 +470,34 @@ export function HouseEditor({ houseId }: HouseEditorProps) {
                 value={`${house.city}, ${house.state} ${house.zip}`}
                 className="w-full px-3 py-2 border rounded-md bg-gray-50"
                 disabled
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="block text-gray-700 mb-1">Architect</label>
+              <select
+                name="architect_id"
+                value={house.architect_id || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-md"
+              >
+                <option value="">-- Select Architect --</option>
+                {architects.map(architect => (
+                  <option key={architect.id} value={architect.id}>
+                    {architect.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label className="block text-gray-700 mb-1">Year Built</label>
+              <input
+                type="number"
+                name="year_built"
+                value={house.year_built || ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border rounded-md"
               />
             </div>
             
@@ -398,17 +548,6 @@ export function HouseEditor({ houseId }: HouseEditorProps) {
             </div>
             
             <div className="form-group">
-              <label className="block text-gray-700 mb-1">Year Built</label>
-              <input
-                type="number"
-                name="year_built"
-                value={house.year_built || ''}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border rounded-md"
-              />
-            </div>
-            
-            <div className="form-group">
               <label className="block text-gray-700 mb-1">Estimated Value ($)</label>
               <input
                 type="number"
@@ -417,6 +556,26 @@ export function HouseEditor({ houseId }: HouseEditorProps) {
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border rounded-md"
               />
+            </div>
+          </div>
+          
+          <div className="form-group">
+            <label className="block text-gray-700 mb-1">Styles</label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-3 border rounded-md bg-gray-50">
+              {styles.map(style => (
+                <div key={style.id} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id={`style-${style.id}`}
+                    checked={selectedStyles.includes(style.id)}
+                    onChange={() => handleStyleChange(style.id)}
+                    className="mr-2"
+                  />
+                  <label htmlFor={`style-${style.id}`} className="text-sm">
+                    {style.name}
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
           
