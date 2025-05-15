@@ -6,6 +6,7 @@ import { PropertyDetailPage } from './pages/PropertyDetailPage';
 import { BrowsePage } from './pages/BrowsePage';
 import { FilterProvider } from './context/FilterContext';
 import { LandingPage } from './pages/LandingPage';
+import { AdminPage } from './pages/AdminPage';
 
 export function App() {
   return (
@@ -22,6 +23,7 @@ export function App() {
           } 
         />
         <Route path="/property/:slug" element={<PropertyDetailPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </HouseProvider>
   );

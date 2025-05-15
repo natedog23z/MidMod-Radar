@@ -14,6 +14,9 @@ export const Hero = () => {
               <Link to="/browse" className="text-sm text-white hover:text-white/80">
                 Explore
               </Link>
+              <Link to="/admin" className="text-sm text-white hover:text-white/80 bg-gray-700/50 px-3 py-1 rounded">
+                Admin
+              </Link>
               <button className="p-1 hover:bg-white/10 rounded-lg transition-colors">
                 <Menu className="w-5 h-5 text-white" />
               </button>

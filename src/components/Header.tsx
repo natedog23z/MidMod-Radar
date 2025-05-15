@@ -14,6 +14,9 @@ export const Header = () => {
           <Link to="/browse" className="text-sm hover:text-gray-600">
             Explore
           </Link>
+          <Link to="/admin" className="text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200">
+            Admin
+          </Link>
           <button className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
             <Menu className="w-5 h-5" />
           </button>

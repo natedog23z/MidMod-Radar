@@ -20,20 +20,30 @@ export const PropertyHero = () => {
     </div>;
   }
 
-  // Get house photos or use a default if none available
-  const photos = house.photos && house.photos.length > 0 
-    ? house.photos 
-    : [];
+  // Get featured photo URL
+  const featuredPhotoUrl = house.featured_photo_url || '';
+  
+  // Get house photos, filtering out the featured photo to avoid duplication
+  const allPhotos = house.photos && house.photos.length > 0 ? house.photos : [];
+  const photos = featuredPhotoUrl 
+    ? allPhotos.filter(photo => photo.photo_url !== featuredPhotoUrl)
+    : allPhotos;
 
-  // Use featured photo as main image if available
-  const mainPhotoUrl = house.featured_photo_url || 
+  // Use featured photo as main image if available, otherwise use the first photo
+  const mainPhotoUrl = featuredPhotoUrl || 
     (photos.length > 0 ? photos[0].photo_url : 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&q=80');
 
   // Format location for display - only city and zip
   const locationText = `${house.city}, ${house.state} ${house.zip}`;
   
-  // Check if we need to show the "See all photos" button
-  const hasMorePhotos = photos.length > 3;
+  // Check if we need to show the "See all photos" button - include featured photo in count
+  const totalPhotoCount = featuredPhotoUrl ? photos.length + 1 : photos.length;
+  const hasMorePhotos = totalPhotoCount > 3;
+
+  // Create a combined array for the gallery view that includes the featured photo first
+  const galleryPhotos = featuredPhotoUrl 
+    ? [{ id: 'featured', house_id: house.id, photo_url: featuredPhotoUrl, is_featured: true }, ...photos]
+    : photos;
 
   // Handle the "See all photos" button click
   const handleSeeAllPhotos = () => {
@@ -50,23 +60,23 @@ export const PropertyHero = () => {
   // Navigate to the next photo
   const handleNextPhoto = () => {
     setCurrentPhotoIndex((prev) => 
-      prev === photos.length - 1 ? 0 : prev + 1
+      prev === galleryPhotos.length - 1 ? 0 : prev + 1
     );
   };
 
   // Navigate to the previous photo
   const handlePrevPhoto = () => {
     setCurrentPhotoIndex((prev) => 
-      prev === 0 ? photos.length - 1 : prev - 1
+      prev === 0 ? galleryPhotos.length - 1 : prev - 1
     );
   };
 
   // Generate photo URL for the current index
   const getCurrentPhotoUrl = () => {
-    if (photos.length === 0) {
+    if (galleryPhotos.length === 0) {
       return 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&q=80';
     }
-    return photos[currentPhotoIndex].photo_url;
+    return galleryPhotos[currentPhotoIndex].photo_url;
   };
 
   // If showing all photos in gallery mode, render the gallery
@@ -77,7 +87,7 @@ export const PropertyHero = () => {
         <div className="flex justify-between items-center p-4 bg-black text-white">
           <div>
             <h2 className="text-xl font-reckless">{house.street}</h2>
-            <p className="text-sm text-gray-300">{photos.length} photos</p>
+            <p className="text-sm text-gray-300">{totalPhotoCount} photos</p>
           </div>
           <button onClick={handleCloseGallery} className="p-2 hover:bg-gray-800 rounded-full">
             <X className="w-6 h-6" />
@@ -113,9 +123,9 @@ export const PropertyHero = () => {
         {/* Thumbnail strip */}
         <div className="h-24 bg-black p-2 overflow-x-auto">
           <div className="flex gap-2">
-            {photos.map((photo, index) => (
+            {galleryPhotos.map((photo, index) => (
               <div 
-                key={index} 
+                key={photo.id || index} 
                 onClick={() => setCurrentPhotoIndex(index)}
                 className={`h-20 w-32 shrink-0 cursor-pointer rounded overflow-hidden ${
                   index === currentPhotoIndex ? 'ring-2 ring-white' : ''
@@ -153,7 +163,7 @@ export const PropertyHero = () => {
         >
           <Image className="w-5 h-5" />
           <span className="font-medium">See all photos</span>
-          <span className="text-gray-600 ml-1">({photos.length || 0})</span>
+          <span className="text-gray-600 ml-1">({totalPhotoCount || 0})</span>
         </button>
       )}
       
@@ -181,7 +191,7 @@ export const PropertyHero = () => {
           {/* First small photo */}
           <div className="relative rounded-lg overflow-hidden">
             <img 
-              src={photos.length > 1 ? photos[1].photo_url : 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&q=80'} 
+              src={photos.length > 0 ? photos[0].photo_url : 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&q=80'} 
               alt={`Property view 2`} 
               className="w-full h-full object-cover cursor-pointer"
               onClick={handleSeeAllPhotos}
@@ -191,7 +201,7 @@ export const PropertyHero = () => {
           {/* Second small photo */}
           <div className="relative rounded-lg overflow-hidden">
             <img 
-              src={photos.length > 2 ? photos[2].photo_url : 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&q=80'} 
+              src={photos.length > 1 ? photos[1].photo_url : 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&q=80'} 
               alt={`Property view 3`} 
               className="w-full h-full object-cover cursor-pointer"
               onClick={handleSeeAllPhotos}
